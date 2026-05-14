@@ -1,0 +1,87 @@
+{
+  "expo": {
+    "name": "FinansSepeti",
+    "slug": "finansepeti-mobile",
+    "scheme": "finansepeti",
+    "version": "2.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "icon": "./logo/app-icon.png",
+    "splash": {
+      "image": "./logo/app-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#1a237e"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.finanssepeti.app",
+      "buildNumber": "3",
+      "icon": "./logo/app-icon.png",
+      "infoPlist": {
+        "NSAppTransportSecurity": {
+          "NSAllowsLocalNetworking": true
+        },
+        "UIBackgroundModes": [
+          "remote-notification"
+        ],
+        "NSCameraUsageDescription": "Canlı yayın ve Jitsi görüşmesi için kamera kullanılır.",
+        "NSMicrophoneUsageDescription": "FinansSepeti, sohbette sesli mesaj göndermek, canlı yayın ve görüşme için mikrofon kullanır.",
+        "NSPhotoLibraryUsageDescription": "Profil fotoğrafınızı seçmek için fotoğraflarınıza erişilir.",
+        "NSPhotoLibraryAddUsageDescription": "Profil fotoğrafı kaydı için gerekir."
+      }
+    },
+    "android": {
+      "package": "com.finanssepeti.app",
+      "versionCode": 3,
+      "icon": "./logo/app-icon.png",
+      "adaptiveIcon": {
+        "foregroundImage": "./logo/app-icon.png",
+        "backgroundColor": "#1a237e"
+      },
+      "softwareKeyboardLayoutMode": "resize",
+      "usesCleartextTraffic": true,
+      "permissions": [
+        "INTERNET",
+        "ACCESS_NETWORK_STATE",
+        "ACCESS_WIFI_STATE",
+        "WAKE_LOCK",
+        "CAMERA",
+        "RECORD_AUDIO",
+        "MODIFY_AUDIO_SETTINGS",
+        "FOREGROUND_SERVICE",
+        "FOREGROUND_SERVICE_MEDIA_PLAYBACK",
+        "FOREGROUND_SERVICE_MEDIA_PROJECTION",
+        "POST_NOTIFICATIONS",
+        "VIBRATE"
+      ]
+    },
+    "plugins": [
+      "@react-native-community/datetimepicker",
+      [
+        "expo-av",
+        {
+          "microphonePermission": "FinansSepeti, sohbette sesli mesaj göndermek için mikrofonunuza erişir."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "FinansSepeti, profil fotoğrafınızı ve paylaşımlarınızdaki görselleri seçmek için galerinize erişir.",
+          "cameraPermission": "FinansSepeti, profil fotoğrafı veya içerik için kamerayı kullanır."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "enableBackgroundRemoteNotifications": true
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "07b59049-b733-440f-b12d-9f40d0774647"
+      }
+    },
+    "owner": "karacaa"
+  }
+}

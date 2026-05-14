@@ -1,0 +1,30 @@
+# Expo: Bu dosya VARSA .gitignore YOK SAYILIR. Bu yüzden kök .gitignore ile aynı kuralları burada da tutuyoruz.
+# https://docs.expo.dev/build-reference/easignore/
+
+# ---- .gitignore ile aynı (zorunlu) ----
+node_modules/
+.expo/
+dist/
+npm-debug.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
+web-build/
+expo-go-qr.html
+google-play-service-account.json
+
+# ---- Ek: yükü düşürür (mobil EAS derlemesi için gerekmez) ----
+market-gateway/
+tefas-service/
+firebase/functions/
+
+android/app/build/
+android/build/
+android/.gradle/
+android/.cxx/
+
+*.log
+.git/

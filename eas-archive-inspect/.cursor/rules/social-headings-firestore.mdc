@@ -1,0 +1,14 @@
+---
+description: Sosyal başlıklar ayrı dosya + Firestore kural kontrolü zorunlu.
+alwaysApply: true
+---
+
+# Sosyal Başlık Geliştirme Kuralı
+
+Kullanıcı sosyal ağ menüsündeki başlıkları (Profilim, Mesajlarım, Ana Sayfam, Kişi Ara vb.) tek tek entegre ederken aşağıyı uygula:
+
+- Her yeni başlık için **ayrı component dosyası** oluştur (ör. `src/components/MesajlarimModal.tsx`).
+- Başlık verisi Firebase/Firestore kullanıyorsa ilgili **lib dosyasını ayır** (ör. `src/lib/messagesFirestore.ts`).
+- Entegrasyon sonrası `firebase/firestore.rules` içindeki ilgili path için güvenlik kontrolü yap ve gerekliyse kural ekle/güncelle.
+- `HomeScreen` içinde yalnızca başlığı açan bağlantı/state ekle; başlık içeriğini ana dosyaya gömme.
+- Dashboard ve Piyasalar kilit kuralını ihlal etmeden ilerle.

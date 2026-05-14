@@ -1,0 +1,25 @@
+---
+description: Kıyasla özelliği (başlık, ekran, veri, metin) kullanıcı açıkça istemedikçe hiçbir şekilde değiştirilemez.
+alwaysApply: true
+---
+
+# Kıyasla — tam dondurma
+
+Kullanıcı **özellikle Kıyasla için bir değişiklik istemedikçe** aşağıdakilere **dokunma**: kod, stil, metin, veri kaynağı, i18n, performans refaktörü veya “küçük düzeltme” bahanesiyle bile düzenleme yapma.
+
+## Dokunulmayacak dosyalar (Kıyasla kapsamı)
+
+- `src/components/KiyaslaGayrimenkulModal.tsx`
+- `src/lib/risersLosersProviders.ts`
+- `src/lib/marketUniverses.ts` içinde yalnızca Kıyasla trend/emtia listeleriyle ilgili tanımlar (`COMMODITIES`, `BIST100_SYMBOLS`, `NASDAQ100_SYMBOLS`, `CRYPTO100_BINANCE_BASES`, kategoriler) — kullanıcı Kıyasla için talimat vermedikçe değiştirme
+- `src/lib/i18n.ts` içinde `kiyasla_*` ve Kıyasla ekranına özel metinler
+
+Kıyasla’yı çağıran üst ekranda **yalnızca navigasyon / modal açma** gibi Kıyasla içeriğine dokunmayan değişiklikler başka bir talep kapsamında olabilir; yine de `KiyaslaGayrimenkulModal` import/props sözleşmesini bozma.
+
+## Kullanıcı ne zaman değiştirebilir?
+
+Yalnızca kullanıcı mesajında **açıkça** Kıyasla’da değişiklik istendiğinde (ör. “Kıyasla’da X yap”, “Yükselenler listesini şöyle değiştir”) ilgili dosyalarda düzenleme yapılabilir.
+
+## Özet
+
+**Kıyasla başlığı dahil tüm Kıyasla davranışı ve görünümü şu an kilitli; izinsiz hiçbir değişiklik yapma.**

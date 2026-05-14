@@ -1,0 +1,23 @@
+---
+description: Ana sayfa + Piyasalar piyasa/grafik özellikleri donduruldu; kullanıcı açıkça söylemeden değiştirme.
+alwaysApply: true
+---
+
+# Ana sayfa ve Piyasalar — değişiklik yasağı
+
+Kullanıcı **dashboard (ana ekran)** ile **Piyasalar** bölümündeki piyasa/grafik davranışını **kilitlemiş** say. Aşağıdakileri **kullanıcı açıkça “ana sayfayı / Home’u / Piyasalar’ı / bu piyasa özelliklerini güncelle” demeden** değiştirme:
+
+## Ana sayfa (dashboard)
+
+- **`src/screens/HomeScreen.tsx`** — tam dosya: çerçeveler, `ScrollView` / `paddingBottom` / `SafeAreaView` / `mainBody`, alt tab çubuğu, FAB, kart yükseklikleri, boşluklar, **tüm yazı boyutları** ve ilgili stiller; piyasa kartları verisi / grafik geri taşıma / yenileme ile ilgili mantık.
+- **`src/components/MarketTileCard.tsx`** içinde ana sayfadaki 6 piyasa kutusuna bakan kısım: **`compact`**, `*Compact` stilleri, kart `minHeight` / padding / bu moddaki fontlar** — doğrudan ana sayfa görünümünü değiştirir.
+
+## Piyasalar ve ortak grafik / veri
+
+- **`src/components/PiyasalarModal.tsx`** — piyasa sekmeleri, emtia/döviz kartları, gram TL / grafikten geri fiyat taşıma, `yahooSnap` ile ilgili bu ekrandaki davranış.
+- **`src/components/TradingViewChartModal.tsx`** — özellikle gram TL (XAUTRYG / XAGTRYG) WebView, Yahoo seri, `onGramChartPriceCommit` akışı.
+- **`src/lib/gramTlChartHtml.ts`** — gram TL grafik HTML / imleç `postMessage`.
+
+**`src/lib/yahooFinance.ts`**: `fetchMarketSnapshot`, gram TL / günlük seri / Comex yedek gibi **ana sayfa ve Piyasalar kartlarını besleyen** kısımları bu özellikler için **aynı gerekçeyle** değiştirme (başka ekranlar için gerekli, kullanıcının onayladığı bir değişiklik değilse).
+
+Başka ekranlarda (ör. Profilim) çalışırken bu dosyalara **yan etkiyle** dokunma. Değişiklik istenirse kullanıcı bunu **açıkça** söylemelidir.

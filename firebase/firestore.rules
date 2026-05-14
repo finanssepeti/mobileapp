@@ -1,0 +1,225 @@
+rules_version = '2';
+// FinansSepeti mobil (Expo APK/AAB) ile web aynı projeyi kullanır.
+// Yazma işlemleri: request.auth != null (Firebase Auth; mobilde genelde Anonymous + isteğe bağlı e-posta bağlama).
+// Koleksiyonlar: chatByUid, messages, comments, forumTopics, socialNotifications, userProfiles, ...
+// Dağıtım: proje kökünde firebase.json — `firebase deploy --only firestore:rules,storage`
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isAppConfigPath() {
+      return request.path.matches('/databases/[^/]+/documents/app_config(/.*)?');
+    }
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function hasMedia() {
+      return request.resource.data.mediaKind is string
+        && request.resource.data.mediaUrl is string
+        && request.resource.data.mediaUrl.size() > 0;
+    }
+
+    // İstemci genelde süreyi double olarak yazar; yalnızca `is int` kullanmak permission-denied üretirdi.
+    function isValidCommentVideoDuration() {
+      let d = request.resource.data.mediaDurationMs;
+      return (d is int || d is float)
+        && d > 0
+        && d <= 15000;
+    }
+
+    function isValidCommentMedia() {
+      return !hasMedia()
+        || (
+          (request.resource.data.mediaKind == "image" || request.resource.data.mediaKind == "video")
+          && (
+            request.resource.data.mediaKind != "video"
+            || !("mediaDurationMs" in request.resource.data)
+            || isValidCommentVideoDuration()
+          )
+        );
+    }
+
+    /* Metin alanları istemcide zorunlu; kural yalnızca medya tutarlılığını denetler (aşırı kısıt permission-denied). */
+    function isValidCommentWrite() {
+      return isValidCommentMedia();
+    }
+
+    /* matches() TÜM dizeyi doğrular: "^#" yalnızca tek "#" ile eşleşir (#fon hep reddolurdu). */
+    function isValidForumTopicCreate() {
+      return request.resource.data.hashtag is string
+        && request.resource.data.hashtag.size() >= 3
+        && request.resource.data.hashtag.size() <= 52
+        && request.resource.data.hashtag.matches("^#.+$")
+        && request.resource.data.userId is string
+        && request.resource.data.username is string
+        && request.resource.data.source == "finanssepeti-mobile-forum";
+    }
+
+    // Mobil `loadHaberConfig()` — şema: ulusalGazete, globalGazete, ulusalTv, globalTv (dizi alanları).
+    match /app_config/{docId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // Cuzdan + yatirim senkronu (web + mobil ortak user key).
+    // docId ornekleri: harcamalarSite (cuzdan), yatirimlarSite (portfoy / dailyPortfolios yansimasi)
+    match /walletByKey/{userKey}/wallet/{docId} {
+      allow read, write: if isSignedIn();
+    }
+
+    // Mesajlarım (mobil): yalnızca oturum sahibi kendi mesajlarını okuyup yazabilir.
+    match /messagesByUid/{uid}/items/{docId} {
+      allow read, write: if isSignedIn() && request.auth.uid == uid;
+    }
+
+    /** Ayarlar / Profil (profilesByUid, profiles, userProfiles): site + mobil alan tutarlılığı. */
+    function isValidAccountSettingFields() {
+      let d = request.resource.data;
+      return (!("gizlilik" in d)
+          || d.gizlilik in ["herkese_acik", "sadece_takipciler", "gizli"])
+        && (!("dil" in d) || d.dil in ["tr", "en", "de", "fr"])
+        && (!("siteGorunumu" in d) || d.siteGorunumu in ["acik", "koyu"])
+        && (!("language" in d) || d.language in ["tr", "en", "de", "fr"])
+        && (!("siteTheme" in d) || d.siteTheme in ["light", "dark", "acik", "koyu"]);
+    }
+
+    // Profilim: kullanıcı kendi profil belgesini okur/yazar.
+    match /profilesByUid/{uid} {
+      allow read: if isSignedIn() && request.auth.uid == uid;
+      allow create, update: if isSignedIn() && request.auth.uid == uid
+        && isValidAccountSettingFields();
+      allow delete: if isSignedIn() && request.auth.uid == uid;
+    }
+
+    // Web profil yapısı (finanssepeti.net uyumu).
+    // Geçici olarak auth yoksa da yazmaya izin veriyoruz; auth netleşince daraltılmalı.
+    match /profiles/{userId} {
+      allow read: if isSignedIn() && request.auth.uid == userId;
+      allow create, update: if isSignedIn() && request.auth.uid == userId
+        && isValidAccountSettingFields();
+      allow delete: if isSignedIn() && request.auth.uid == userId;
+    }
+
+    // Web sosyal ağ kullanıcı profilleri (username/e-mail çözümleme burada yapılıyor).
+    match /userProfiles/{docId} {
+      allow read: if true;
+      allow create, update: if isSignedIn() && isValidAccountSettingFields();
+      allow delete: if isSignedIn();
+    }
+
+    // Mesajlarım sohbet geçmişi (web ile aynı sosyal mesajlaşma modeli için kullanıcı bazlı thread tutar).
+    match /chatByUid/{uid}/threads/{peerKey} {
+      allow read, write: if isSignedIn() && request.auth.uid == uid;
+      match /messages/{messageId} {
+        allow read, write: if isSignedIn() && request.auth.uid == uid;
+      }
+    }
+
+    // Web sosyal ağ mesaj koleksiyonu (fromUserId / toUserId).
+    // Anonymous auth kapalı projelerde geçici açık erişim.
+    match /messages/{docId} {
+      allow read, write: if isSignedIn();
+    }
+
+    // Forum konu başlıkları (#etiket) — herkes okur, konu açma kaydı oluşturma.
+    match /forumTopics/{docId} {
+      allow read: if true;
+      allow create: if isSignedIn() && isValidForumTopicCreate();
+      allow update: if false;
+      /* Oturum açıkken silme (moderasyon / istenmeyen konu); oluşturma kurallarından bağımsız */
+      allow delete: if isSignedIn();
+    }
+
+    // Yorum Yaz / Yorumlarım (web + mobil ortak yorum koleksiyonu).
+    // Silmede `request.resource` yok; medya doğrulaması yalnız create/update için (aksi halde permission-denied).
+    match /comments/{docId} {
+      allow read: if true;
+      allow create, update: if isSignedIn() && isValidCommentWrite();
+      allow delete: if isSignedIn();
+    }
+
+    // publishComment() yedek koleksiyonları — anonim auth kapalıyken catch-all auth istemesin diye açık kural.
+    match /socialPosts/{docId} {
+      allow read: if true;
+      allow create, update: if isSignedIn() && isValidCommentWrite();
+      allow delete: if isSignedIn();
+    }
+    match /posts/{docId} {
+      allow read: if true;
+      allow create, update: if isSignedIn() && isValidCommentWrite();
+      allow delete: if isSignedIn();
+    }
+
+    // Sosyal yorum etiket/mention bildirimleri.
+    match /socialNotifications/{docId} {
+      allow read, write: if isSignedIn();
+    }
+
+    // Expo push token (cihaz başına); okuma yalnızca sunucu / Cloud Function için kapalı.
+    match /userPushTokens/{userId}/devices/{deviceId} {
+      allow read: if false;
+      allow create, update, delete: if isSignedIn();
+    }
+
+    // Kurumsal kullanıcıların profilindeki İş İlanları içeriği.
+    // Bireysel kullanıcılar okuyabilir, sadece giriş yapan kullanıcılar yazabilir.
+    match /jobPosts/{docId} {
+      allow read: if true;
+      allow write: if isSignedIn();
+    }
+    match /companyJobPosts/{companyId}/items/{docId} {
+      allow read: if true;
+      allow write: if isSignedIn();
+    }
+
+    // Kişi Ara - takip/takipçi listeleri.
+    match /socialFollows/{uid}/following/{targetUid} {
+      allow read, write: if isSignedIn() && request.auth.uid == uid;
+    }
+    match /socialFollowers/{uid}/followers/{followerUid} {
+      allow read, write: if isSignedIn() && request.auth.uid == uid;
+    }
+    match /socialFollowRequests/{uid}/incoming/{fromUid} {
+      allow read, write: if isSignedIn() && (request.auth.uid == uid || request.auth.uid == fromUid);
+    }
+    // Web tarafında farklı alt path isimleri kullanılıyorsa (incoming/requests/pending vb) uyumluluk.
+    match /socialFollowRequests/{uid}/{bucket}/{fromUid} {
+      allow read, write: if isSignedIn() && (request.auth.uid == uid || request.auth.uid == fromUid);
+    }
+    // Bazı web sürümlerinde tek koleksiyon modeli.
+    match /followRequests/{docId} {
+      allow read, write: if isSignedIn();
+    }
+    // Ek uyumluluk: farklı koleksiyon adları.
+    match /socialRequests/{docId} {
+      allow read, write: if isSignedIn();
+    }
+    match /friendRequests/{docId} {
+      allow read, write: if isSignedIn();
+    }
+    match /socialBlocks/{uid}/blocked/{targetUid} {
+      allow read, write: if isSignedIn() && request.auth.uid == uid;
+    }
+
+    /**
+     * Şifre sıfırlama 6 haneli kod (web + mobil). Cloud Function doğrulaması bu kaydı okur (Admin SDK).
+     * Giriş ekranında Firebase oturumu olmayabilir; yalnızca sınırlı alanlarla create açık, okuma kapalı.
+     */
+    match /passwordResetCodes/{docId} {
+      allow create: if request.resource.data.keys().hasOnly(["email", "code", "createdAt"])
+        && request.resource.data.email is string
+        && request.resource.data.email.size() >= 5
+        && request.resource.data.email.size() <= 120
+        && request.resource.data.code is string
+        && request.resource.data.code.matches("^[0-9]{6}$");
+      allow read, update, delete: if false;
+    }
+
+    // Gecici kurtarma kurali:
+    // Kişi Ara / Profil gibi public okuma yapan ekranlar için read açık,
+    // write ise auth zorunlu (app_config hariç — yalnızca Admin SDK / konsol).
+    match /{document=**} {
+      allow read: if true;
+      allow write: if isSignedIn() && !isAppConfigPath();
+    }
+  }
+}

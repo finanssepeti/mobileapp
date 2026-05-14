@@ -1,0 +1,14 @@
+---
+description: FinansSepeti mobil v1.0 — sürüm donduruldu; onay olmadan kod/kural değişikliği yok.
+alwaysApply: true
+---
+
+# Mobil uygulama v1.0 dondurma (kilit)
+
+Kullanıcı bu projeyi **tamamlanmış sürüm** olarak kilitlemiştir. Aşağıdakilere **kesinlikle uy**:
+
+1. **Kod**: `src/`, `App.tsx`, `app.json`, `eas.json`, `firebase/`, `scripts/`, `package.json`, `.env` / `.env.example`, `logo/`, `web_app.js` ve kök yapılandırmalarda **hiçbir değişiklik yapma** — kullanıcı açıkça “şunu değiştir” demeden refactor, iyileştirme, formatlama veya “küçük düzeltme” de yok.
+2. **Cursor / Firestore kuralları**: `.cursor/rules/*.mdc` ve `firebase/firestore.rules` dosyalarını **onaysız güncelleme**; yeni kural ekleme de yalnızca kullanıcı isteğiyle.
+3. **Yeni özellik / davranış**: v1.0 kilidi altında yalnızca **okuma**, hata ayıklama açıklaması veya kullanıcının tek tek yazdığı net görevler (ör. “sadece X dosyasında Y”) serbest; geniş kapsamlı veya “temizlik” amaçlı diff üretme.
+
+İstisna: Kullanıcı mesajında **açıkça** belirtilen dosya ve değişiklik (ör. “şu ekranda metni değiştir”) varsa, yalnızca o kapsamda minimal düzenleme yapılabilir.

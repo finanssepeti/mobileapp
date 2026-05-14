@@ -1,0 +1,44 @@
+rules_version = '2';
+// Mobil mesaj ekleri: messages/** (foto, video, ses) — uygulama bu path ile yükler.
+// Yorum medyası: comments/** (görüntü/video, boyut+kural aşağıda).
+// Bu dosya .env ile yüklenmez; canlı kova kuralları için proje kökünden:
+//   firebase deploy --only storage,firestore:rules
+// (veya `npm run firebase:deploy:rules` script’i varsa onu kullanın)
+service firebase.storage {
+  match /b/{bucket}/o {
+    function isSignedInOrLegacyOpen() {
+      return request.auth != null || request.auth == null;
+    }
+
+    function isAllowedCommentMedia() {
+      return request.resource != null
+        && request.resource.size <= 25 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*|video/.*|audio/.*')
+        && (
+          (request.resource.contentType.matches('image/.*') && request.resource.size <= 5 * 1024 * 1024)
+          || request.resource.contentType.matches('video/.*')
+          || (request.resource.contentType.matches('audio/.*') && request.resource.size <= 12 * 1024 * 1024)
+        );
+    }
+
+    // Geçici: mobil + web medya mesajları için herkese açık.
+    // Sonraki adım: auth/owner bazlı daraltılmalı.
+    match /messages/{allPaths=**} {
+      allow read, write: if true;
+    }
+    // Yorum medya dosyalari (foto/video) — mobil + web ortak.
+    match /comments/{allPaths=**} {
+      allow read: if true;
+      allow write: if isSignedInOrLegacyOpen() && isAllowedCommentMedia();
+    }
+    // Profil fotoğrafları: tüm kullanıcılar okuyabilsin (sohbet avatarları için),
+    // yazma sadece sahibi tarafından yapılsın.
+    match /profiles/{userId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
