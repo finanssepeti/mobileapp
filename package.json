@@ -84,6 +84,9 @@
   },
   "expo": {
     "doctor": {
+      "appConfigFieldsNotSyncedCheck": {
+        "enabled": false
+      },
       "reactNativeDirectoryCheck": {
         "listUnknownPackages": false,
         "exclude": [
