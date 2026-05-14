@@ -1,6 +1,15 @@
 node_modules/
 .expo/
 **/.expo/
+
+# Secrets (keep locally; never commit)
+.env
+!.env.example
+**/.env
+!**/.env.example
+
+# Git for Windows installer (do not commit)
+Git-*.exe
 dist/
 npm-debug.*
 *.jks
